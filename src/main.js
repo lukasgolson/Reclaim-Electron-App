@@ -15,7 +15,7 @@ function createWindow() {
     show: false,
     webPreferences: {
       preload: `${__dirname}/renderer.js`,
-      partition: 'persist:MyAppSomethingUnique'
+      partition: 'persist:ReclaimElectronApp'
     }
   });
 
@@ -27,7 +27,7 @@ function createWindow() {
     session.defaultSession.cookies.flushStore();
   });
 
-  mainWindow.loadURL("https://app.reclaim.ai/login");
+  mainWindow.loadURL("https://app.reclaim.ai/planner?range=DAY");
 
   mainWindow.once('ready-to-show', () => {
   mainWindow.show()

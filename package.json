@@ -1,8 +1,8 @@
 {
-  "name": "reclaimapp",
-  "productName": "reclaimapp",
-  "version": "1.0.0",
-  "description": "An executable version of Reclaim.",
+  "name": "reclaim",
+  "productName": "reclaim",
+  "version": "1.0.1",
+  "description": "An electron-based desktop host for Reclaim.",
   "main": "src/main.js",
   "scripts": {
     "start": "electron-forge start",
