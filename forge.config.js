@@ -7,9 +7,8 @@ module.exports = {
     {
       name: '@electron-forge/maker-squirrel',
       config: {
-        iconUrl: 'https://raw.githubusercontent.com/lukasdragon/Reclaim-Electron-App/master/images/favicon.ico',
-        setupIcon: '/images/favicon.ico',
-      },
+		  setupIcon: 'images/favicon.ico'
+	  },
     },
     {
       name: '@electron-forge/maker-zip',
@@ -18,7 +17,7 @@ module.exports = {
     {
       name: '@electron-forge/maker-deb',
       config: {
-		   options: {
+		options: {
 			icon: '/images/icon.png',
         },
 	  },
