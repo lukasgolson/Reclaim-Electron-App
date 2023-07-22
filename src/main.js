@@ -1,72 +1,91 @@
-// Modules to control application life and create native browser window
-const { app, BrowserWindow, Menu } = require("electron");
+const {app, BrowserWindow, ipcMain, Menu, Tray, nativeImage, dialog} = require('electron');
+const fs = require('fs');
+const path = require('path');
 
-// Keep a global reference of the window object, if you don't, the window will
-// be closed automatically when the JavaScript object is garbage collected.
 let mainWindow;
+let tray;
 
 function createWindow() {
-  // Create the browser window.
-  mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
-    title: 'Reclaim',
-	icon: 'images/favicon.ico',
-    show: false,
-    webPreferences: {
-      preload: `${__dirname}/renderer.js`,
-      partition: 'persist:ReclaimElectronApp'
-    }
-  });
+    mainWindow = new BrowserWindow({
+        width: 800,
+        height: 600,
+        title: 'Reclaim',
+        icon: 'images/favicon.ico',
+        show: false,
+        webPreferences: {
+            preload: path.join(__dirname, 'preload.js'),
+            partition: 'persist:ReclaimElectronApp',
+            contextIsolation: true,
+        }
+    });
 
-  mainWindow.on('did-start-navigation', function() {
-    session.defaultSession.cookies.flushStore();
-  });
+    mainWindow.loadURL("https://app.reclaim.ai/planner?range=DAY").catch(err => {
+        dialog.showErrorBox('Error loading the URL', err.message);
+    });
 
-  mainWindow.on('did-navigate', function() {
-    session.defaultSession.cookies.flushStore();
-  });
+    mainWindow.on('ready-to-show', () => {
+        mainWindow.show();
+    });
 
-  mainWindow.loadURL("https://app.reclaim.ai/planner?range=DAY");
+    mainWindow.on("closed", function () {
+        mainWindow = null;
+    });
 
-  mainWindow.once('ready-to-show', () => {
-  mainWindow.show()
-})
+    mainWindow.webContents.on('did-fail-load', () => {
+        dialog.showErrorBox('Error loading the URL', 'Please check your internet connection.');
+    });
 
-  
+    mainWindow.webContents.openDevTools();
+}
 
-  // Emitted when the window is closed.
-  mainWindow.on("closed", function() {
-    mainWindow = null;
-  });
+ipcMain.handle('get-html', async (event) => {
+    const htmlFilePath = path.join(__dirname, 'sidebar.html');
+    return fs.readFileSync(htmlFilePath, 'utf8');
+});
+
+
+
+
+function createTray() {
+    tray = new Tray(nativeImage.createFromPath('images/favicon.ico'));
+    tray.on('click', () => {
+        mainWindow.isVisible() ? mainWindow.hide() : mainWindow.show();
+    });
 }
 
 function createMainMenu() {
-  Menu.setApplicationMenu(null);
+    Menu.setApplicationMenu(null);
 }
 
-
 app.on("ready", () => {
-  createWindow();
-  createMainMenu();
-});
-
-// Quit when all windows are closed.
-app.on("window-all-closed", function() {
-  // On macOS it is common for applications and their menu bar
-  // to stay active until the user quits explicitly with Cmd + Q
-  if (process.platform !== "darwin") {
-    app.quit();
-  }
-});
-
-app.on("activate", function() {
-  // On macOS it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
-  if (mainWindow === null) {
     createWindow();
-  }
+    createMainMenu();
+    createTray();
 });
 
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.
+app.on("window-all-closed", function () {
+    if (process.platform !== "darwin") {
+        app.quit();
+    }
+});
+
+app.on("activate", function () {
+    if (mainWindow === null) {
+        createWindow();
+    }
+});
+
+// Ensuring single instance of the app
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+    app.quit();
+} else {
+    app.on('second-instance', (event, commandLine, workingDirectory) => {
+        // When another instance is launched, restore and focus the window
+        if (mainWindow) {
+            if (mainWindow.isMinimized()) mainWindow.restore();
+            mainWindow.focus();
+        }
+    });
+}
